@@ -121,8 +121,10 @@ class BBox:
         new_pcs = np.concatenate((pcs,
                                   np.ones(pcs.shape[0])[:, np.newaxis]),
                                   axis=1)
+        
         new_pcs = ego_matrix @ new_pcs.T
         new_pcs = new_pcs.T[:, :3]
+                
         return new_pcs
     
     @classmethod

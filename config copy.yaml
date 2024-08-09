@@ -83,7 +83,7 @@ factors:
     iou_threshold: 0.1
 
 weight:
-  icp: 1
+  icp: 1.0
   latitude: 0.0
   motion_prior: 0.1
   shape_loss: 1.0
