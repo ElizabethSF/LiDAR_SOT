@@ -37,7 +37,18 @@ class ShapeMap:
     def pre_frame_optim(self, input_data: FrameData):
         # this initialization only works on frame 0
         self.initialize_shapes(pc=input_data.pc, bbox=input_data.start_bbox)
+        
         self.shape_pc = self.obj_shape.shape_pc
+        
+        print('shape_pc:', self.shape_pc.shape)
+        
+        # # 存储为pcd文件
+        # import open3d as o3d
+        # pcd = o3d.geometry.PointCloud()
+        # pcd.points = o3d.utility.Vector3dVector(self.shape_pc)s
+        # o3d.io.write_point_cloud("output.pcd", pcd)
+        
+                
         self.shape_state = self.obj_shape.shape_state
 
         self.size = min(self.size + 1, self.window_size)

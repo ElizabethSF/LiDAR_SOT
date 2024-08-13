@@ -28,6 +28,8 @@ parser.add_argument('--max_len', type=int, default=200)
 # parse arguments
 args = parser.parse_args()
 
+data_index = "1"
+
 
 def find_bboxes(id, data_folder, segment_name, start_frame, end_frame):
     """ In the SOT, the beginning frame is a GT BBox
@@ -75,7 +77,10 @@ def calculate_heading_error(bbox1, bbox2):
     
     heading_error = abs(bbox1[3] - bbox2[3])*180/3.1415926
     
-    heading_error = min(heading_error, 360 - heading_error)
+    heading_error = min(heading_error, abs(360 - heading_error))
+    
+    heading_error = min(heading_error, abs(180 - heading_error))
+    
     
     return heading_error
 
@@ -207,6 +212,7 @@ def tracker_api(configs, id, start_bbox, start_frame, data_loader, track_len, gt
 
         if visualize and frame_index%20==0:
             frame_result_visualization(frame_result[max_frame_key], tracker.input_data.pc)
+        
     return tracklet_result
 
 
@@ -214,9 +220,12 @@ def tracker_api(configs, id, start_bbox, start_frame, data_loader, track_len, gt
 def myDataLoader():
     for i in range(200):
         name_str = "{:0>4d}".format(i+5)
-        file_path_str = "/home/runrunxin/Projects/catkin_livox/src/clustering_and_tracking/pcd_car_31/"
+        file_path_str = "ourdata/segmented_cloud/data_" + data_index + "/"
         
         pcd = o3d.io.read_point_cloud(file_path_str + name_str + ".pcd")
+        
+        print(name_str)
+        
         points = np.asarray(pcd.points)
         
         ego_matrix = np.eye(4)
@@ -233,10 +242,13 @@ def load_gts():
     
     num = 0
     
-    with open("/home/runrunxin/Projects/Visualization/data/regist/regist_livox_99.txt", 'r') as file:
+    start_bbox = None
+    
+    with open("ourdata/gt/gt_" + data_index + ".txt", 'r') as file:
         for line in file:
             num = num +1
-            
+                
+
             if num > 200:
                 break
             
@@ -249,24 +261,21 @@ def load_gts():
             gt_bbox[1]= bbox_line[2]
             gt_bbox[2]= bbox_line[3]
             
-            gt_bbox[3]= 1.575 - bbox_line[6]
-            
-            # 帧数大于132时，方向莫名反向了，这里进行修正
-            if num > 132:
-                gt_bbox[3]= 1.575 + bbox_line[6]
+            gt_bbox[3]= bbox_line[6]
             
             # 4.602, 1.90, 1.645
             gt_bbox[4]= 4.602
             gt_bbox[5]= 1.90
             gt_bbox[6]= 1.645
-            
-            # print(gt_bbox)
+                        
+            if num == 1:
+                start_bbox = gt_bbox
             
             bbox = BBox.array2bbox(gt_bbox)
             
             gts.append(bbox)
             
-    return gts
+    return gts,start_bbox
         
         
 
@@ -280,8 +289,11 @@ if __name__ == '__main__':
 
     ## 准备api的各项输入
 
-    # id
+    # id (没啥用)
     id= "99"
+    
+    # 表示运行的是哪一组数据 1~2
+    data_index = "1"
     
     # config
     f = open("config.yaml", 'r')
@@ -292,10 +304,9 @@ if __name__ == '__main__':
     data_loader = myDataLoader()
     
     
-    # beginning bbox
-    start_bbox = [37.031, 14.7322, 0., -0.93506, 4.602, 1.9,1.645]
+    # 包围盒的真值数据和初始包围盒真值
+    gts, start_bbox = load_gts()
     
-    gts = load_gts()
-    
-        
+    # run the tracker
+    # visualize决定是否可视化结果
     tracker_api(configs, id, start_bbox, 0, data_loader, 200, gts=gts, visualize=True)
